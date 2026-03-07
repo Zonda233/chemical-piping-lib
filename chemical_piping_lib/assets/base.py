@@ -162,6 +162,11 @@ class PipingAsset(ABC):
         mid = material_id or self.material_id
         assign_material(self._obj, mid)
 
+        if getattr(self._obj, "type", None) == "MESH" and self._obj.data is not None:
+            for poly in self._obj.data.polygons:
+                poly.use_smooth = True
+            self._obj.data.update()
+
         # Link to the requested collection (if not already linked).
         if self.collection is not None:
             if self._obj.name not in self.collection.objects:

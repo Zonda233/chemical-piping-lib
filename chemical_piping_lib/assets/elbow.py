@@ -132,6 +132,18 @@ class Elbow(PipingAsset):
             n_segments=RUNTIME.elbow_arc_segments,
         )
 
+        # --- 1b. Extend arc slightly into adjacent pipes to avoid seam ----
+        # Prepend/append one ring so elbow mesh overlaps pipe ends by ~3 mm.
+        _OVERLAP = 0.003
+        first_centre, first_tan = self._arc[0]
+        last_centre, last_tan = self._arc[-1]
+        extended = [
+            (first_centre - _OVERLAP * first_tan, first_tan),  # into incoming pipe
+        ] + list(self._arc) + [
+            (last_centre + _OVERLAP * last_tan, last_tan),     # into outgoing pipe
+        ]
+        self._arc = extended
+
         # --- 2. Build swept geometry in bmesh -------------------------
         bm = bmesh.new()
         make_elbow_sweep(

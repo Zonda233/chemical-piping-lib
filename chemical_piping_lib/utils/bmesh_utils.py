@@ -213,25 +213,23 @@ def make_cylinder(
     z_top = center.z + half
     cx, cy = center.x, center.y
 
-    # Build bottom and top vertex rings.
+    # Build bottom and top vertex rings with the same angular winding so
+    # bot_loop[i] and top_loop[i] are vertically aligned (no twist / "pinched" cylinder).
+    # build_local_frame(+Z) and (-Z) give different u,v, so we use the same normal
+    # for both rings, then reverse the top cap for correct outward normal.
     bot_center_2d = Vector((cx, cy, z_bot))
     top_center_2d = Vector((cx, cy, z_top))
 
     bot_loop = make_circle_verts(bm, bot_center_2d, Vector((0, 0, -1)), radius, segments)
-    top_loop = make_circle_verts(bm, top_center_2d, Vector((0, 0,  1)), radius, segments)
+    top_loop = make_circle_verts(bm, top_center_2d, Vector((0, 0, -1)), radius, segments)
 
-    # Side-wall quads.
-    # top_loop vertices are wound CCW when viewed from +Z.
-    # bot_loop vertices are wound CCW when viewed from -Z.
-    # For bridge_loops the two rings must be wound opposite to each other
-    # (CCW from their own outward-normal viewpoint) — which they already are.
     bridge_loops(bm, bot_loop, top_loop)
 
     # Bottom cap (n-gon); reverse winding so normal points -Z.
     cap_loop(bm, list(reversed(bot_loop)))
 
-    # Top cap; winding already CCW from +Z viewpoint.
-    cap_loop(bm, top_loop[:])
+    # Top cap: reverse so normal points +Z (same ring winding as bottom from -Z view).
+    cap_loop(bm, list(reversed(top_loop)))
 
     bm.faces.ensure_lookup_table()
     bm.verts.ensure_lookup_table()
@@ -278,19 +276,16 @@ def make_tube(
     z_top = center.z + half
     cx, cy = center.x, center.y
 
+    # Same normal for all rings so vertex indices align (no twist).
     n_out_bot = make_circle_verts(bm, Vector((cx, cy, z_bot)), Vector((0,0,-1)), radius,       segments)
     n_in_bot  = make_circle_verts(bm, Vector((cx, cy, z_bot)), Vector((0,0,-1)), inner_radius, segments)
-    n_out_top = make_circle_verts(bm, Vector((cx, cy, z_top)), Vector((0,0, 1)), radius,       segments)
-    n_in_top  = make_circle_verts(bm, Vector((cx, cy, z_top)), Vector((0,0, 1)), inner_radius, segments)
+    n_out_top = make_circle_verts(bm, Vector((cx, cy, z_top)), Vector((0,0,-1)), radius,       segments)
+    n_in_top  = make_circle_verts(bm, Vector((cx, cy, z_top)), Vector((0,0,-1)), inner_radius, segments)
 
-    # Outer wall.
     bridge_loops(bm, n_out_bot, n_out_top)
-    # Inner wall (reverse winding so normal faces inward = outward for tube interior).
     bridge_loops(bm, n_in_top, n_in_bot)
-    # Bottom annular cap.
     _make_annular_cap(bm, list(reversed(n_out_bot)), n_in_bot)
-    # Top annular cap.
-    _make_annular_cap(bm, n_out_top, list(reversed(n_in_top)))
+    _make_annular_cap(bm, list(reversed(n_out_top)), list(reversed(n_in_top)))
 
 
 def _make_annular_cap(

@@ -108,7 +108,10 @@ class Valve(PipingAsset):
         dn_spec = get_dn_spec(nominal_d)
         self.pipe_radius: float = dn_spec["outer_diameter"] / 2.0
         self.body_radius: float = self.pipe_radius * _BODY_RADIUS_FACTOR
-        self.body_length: float = self.pipe_radius * 2 * _BODY_LENGTH_FACTOR
+        # Span the full segment so valve butts against adjacent pipes (no gap).
+        segment_length = (self.wc_end - self.wc_start).length
+        min_length = self.pipe_radius * 2 * _BODY_LENGTH_FACTOR
+        self.body_length: float = max(segment_length, min_length)
 
     # ------------------------------------------------------------------
     # PipingAsset interface
@@ -187,11 +190,14 @@ class Valve(PipingAsset):
         """
         Build a ball-valve placeholder.
 
-        Shape: sphere body + flat handle tab on side.
+        Shape: sphere body (radius = body_length/2 so it spans wc_start..wc_end)
+        + flat handle tab on side.
         """
         extras: list[bpy.types.Object] = []
 
-        # Sphere body using UV sphere via bpy.data (no ops needed).
+        # Sphere radius = half of segment length so the sphere touches both ports.
+        ball_radius = self.body_length / 2.0
+
         mesh = bpy.data.meshes.new(f"{self.comp_id}_ball_mesh")
         body = bpy.data.objects.new(f"{self.comp_id}_body", mesh)
         col = self.collection or bpy.context.scene.collection
@@ -202,7 +208,7 @@ class Valve(PipingAsset):
             bm,
             u_segments=RUNTIME.mesh_segments,
             v_segments=RUNTIME.mesh_segments // 2,
-            radius=self.body_radius,
+            radius=ball_radius,
         )
         recalc_normals(bm)
         bm.to_mesh(mesh)
@@ -211,7 +217,7 @@ class Valve(PipingAsset):
 
         # Handle tab (flat box, local +Y side).
         handle = self._make_handle_box()
-        handle.location = Vector((0.0, self.body_radius + _HANDLE_LENGTH / 2.0, 0.0))
+        handle.location = Vector((0.0, ball_radius + _HANDLE_LENGTH / 2.0, 0.0))
         extras.append(handle)
 
         return body, extras

@@ -69,7 +69,7 @@ from chemical_piping_lib.utils.bmesh_utils import (
 from chemical_piping_lib.utils.coords import (
     align_object_to_axis,
     axis_to_vec,
-    vc_to_wc_center,
+    vc_to_wc_point,
 )
 from chemical_piping_lib.utils.ops_wrapper import join_objects
 
@@ -115,18 +115,20 @@ class Tank(PipingAsset):
         # Port definitions from JSON.
         self.ports_def: list[dict] = comp_data.get("ports", [])
 
-        # Voxel origin used to compute default world-space centre if
-        # no explicit wc_center is provided.
-        vo = comp_data.get("voxel_origin")
-        ve = comp_data.get("voxel_extent")
-        if vo and ve:
-            # Approximate geometric centre from voxel bounding box.
-            cx = vo[0] + ve[0] / 2.0
-            cy = vo[1] + ve[1] / 2.0
-            cz = vo[2] + ve[2] / 2.0
-            self.world_center = vc_to_wc_center([cx, cy, cz])
+        # World centre can be given explicitly. Otherwise derive it from the
+        # voxel bounding box centre expressed in voxel-grid coordinates.
+        if "wc_center" in comp_data:
+            self.world_center = Vector(comp_data["wc_center"])
         else:
-            self.world_center = Vector((0.0, 0.0, 0.0))
+            vo = comp_data.get("voxel_origin")
+            ve = comp_data.get("voxel_extent")
+            if vo and ve:
+                cx = vo[0] + ve[0] / 2.0
+                cy = vo[1] + ve[1] / 2.0
+                cz = vo[2] + ve[2] / 2.0
+                self.world_center = vc_to_wc_point([cx, cy, cz])
+            else:
+                self.world_center = Vector((0.0, 0.0, 0.0))
 
         # Map port_id → world position (populated in build).
         self._port_positions: dict[str, Vector] = {}
@@ -144,7 +146,7 @@ class Tank(PipingAsset):
 
         parts: list[bpy.types.Object] = []
 
-        # --- 1. Shell cylinder ----------------------------------------
+        # --- 1. Shell cylinder (at local origin) ----------------------
         bm = bmesh.new()
         make_cylinder(
             bm,
@@ -155,41 +157,38 @@ class Tank(PipingAsset):
         recalc_normals(bm)
         shell = bm_to_object(bm, f"{self.comp_id}_shell", self.collection)
 
-        # --- 2. Heads -------------------------------------------------
+        # --- 2. Heads (at local offsets) ------------------------------
         head_top, head_bot = self._build_heads()
 
         half_h = self.shell_height / 2.0
-        head_height = self._head_height()
-
-        head_top.location = Vector((0.0, 0.0,  half_h + head_height / 2.0))
-        head_bot.location = Vector((0.0, 0.0, -half_h - head_height / 2.0))
+        head_top.location = Vector((0.0, 0.0,  half_h))
+        head_bot.location = Vector((0.0, 0.0, -half_h))
 
         parts.extend([head_top, head_bot])
 
-        # --- 3. Join everything into the shell -----------------------
+        # --- 3. Nozzles (at local offsets, NOT world coords) ----------
+        nozzle_objs = self._build_nozzles_local()
+        parts.extend(nozzle_objs)
+
+        # --- 4. Join everything into shell ----------------------------
         self._obj = join_objects(shell, parts)
         self._obj.name      = self.comp_id
         self._obj.data.name = self.comp_id
 
-        # Clean up seam between shell and heads.
         bm_clean = bmesh.new()
         bm_clean.from_mesh(self._obj.data)
-        remove_doubles(bm_clean, dist=1e-4)
+        remove_doubles(bm_clean, dist=1e-5)
         recalc_normals(bm_clean)
         bm_clean.to_mesh(self._obj.data)
         bm_clean.free()
         self._obj.data.update()
 
-        # --- 4. Orientation ------------------------------------------
+        # --- 5. Orientation ------------------------------------------
         if self.orientation == "horizontal":
-            import math
             self._obj.rotation_euler[0] = math.pi / 2.0
 
-        # --- 5. Translate to world centre ----------------------------
+        # --- 6. Translate assembled tank to world centre (LAST step) --
         self._obj.location = self.world_center
-
-        # --- 6. Build nozzles + record port positions -----------------
-        self._build_nozzles()
 
         # --- 7. Finalise ---------------------------------------------
         self._finalise()
@@ -282,29 +281,28 @@ class Tank(PipingAsset):
 
         return top, bot
 
-    def _build_nozzles(self) -> None:
+    def _build_nozzles_local(self) -> list[bpy.types.Object]:
         """
-        For each port in ``self.ports_def``, extrude a short stub cylinder
-        from the tank surface and record the port's world position.
-
-        A Flange is added at the nozzle tip when the port defines a
-        ``flange_spec`` entry.
+        Build nozzle stubs in the **tank's local coordinate system** (origin
+        at tank centre, +Z up).  Record port positions in **world space** so
+        downstream pipe segments can use them directly.
         """
         from chemical_piping_lib.assets.flange import Flange
 
+        nozzle_objs: list[bpy.types.Object] = []
+
         for port in self.ports_def:
             port_id  = port["port_id"]
-            wc       = Vector(port["wc"])
             direction: str = port["direction"]
             nominal_d: float = float(port.get("nominal_diameter", 0.05))
 
-            dn_spec      = get_dn_spec(nominal_d)
-            nozzle_r     = dn_spec["outer_diameter"] / 2.0
-            nozzle_len   = NOZZLE_LENGTH
+            local_root = self._port_local_offset(port)
 
-            dir_vec = axis_to_vec(direction)
+            dn_spec    = get_dn_spec(nominal_d)
+            nozzle_r   = dn_spec["outer_diameter"] / 2.0
+            nozzle_len = float(port.get("nozzle_length_m", NOZZLE_LENGTH))
+            dir_vec    = axis_to_vec(direction)
 
-            # Nozzle stub: short cylinder pointing outward from tank surface.
             bm = bmesh.new()
             make_cylinder(bm, radius=nozzle_r, depth=nozzle_len,
                           segments=RUNTIME.mesh_segments)
@@ -315,14 +313,13 @@ class Tank(PipingAsset):
                 collection=self.collection,
             )
             align_object_to_axis(nozzle_obj, direction)
-            # Place so the inner face sits at wc, stub extends outward.
-            nozzle_obj.location = wc + dir_vec * (nozzle_len / 2.0)
+            nozzle_obj.location = local_root + dir_vec * (nozzle_len / 2.0)
+            nozzle_objs.append(nozzle_obj)
 
-            # Record port world position (at nozzle tip).
-            tip_wc = wc + dir_vec * nozzle_len
+            world_root = self.world_center + local_root
+            tip_wc     = world_root + dir_vec * nozzle_len
             self._port_positions[port_id] = tip_wc
 
-            # Optional flange at nozzle tip.
             if "flange_spec" in port:
                 fl_data = {
                     "comp_id":          f"{port_id}_flange",
@@ -337,3 +334,36 @@ class Tank(PipingAsset):
                     collection=self.collection,
                 )
                 fl.build()
+
+        return nozzle_objs
+
+    def _port_local_offset(self, port: dict) -> Vector:
+        """
+        Return the nozzle attachment point as a **local offset** from the
+        tank centre (0, 0, 0).
+
+        If the JSON provides ``wc``, convert it to local by subtracting
+        ``world_center``.  Otherwise derive from geometry + direction.
+        """
+        if "wc" in port:
+            return Vector(port["wc"]) - self.world_center
+
+        direction = port["direction"]
+        half_h = self.shell_height / 2.0
+        head_h = self._head_height()
+
+        offsets = {
+            "+X": Vector(( self.shell_radius, 0.0, 0.0)),
+            "-X": Vector((-self.shell_radius, 0.0, 0.0)),
+            "+Y": Vector((0.0,  self.shell_radius, 0.0)),
+            "-Y": Vector((0.0, -self.shell_radius, 0.0)),
+            "+Z": Vector((0.0, 0.0,  half_h + head_h)),
+            "-Z": Vector((0.0, 0.0, -half_h - head_h)),
+        }
+        if direction in offsets:
+            return offsets[direction]
+
+        raise ValueError(
+            f"Tank {self.comp_id!r}: port {port.get('port_id', '?')!r} has "
+            f"unsupported direction {direction!r} for automatic placement."
+        )

@@ -108,6 +108,27 @@ def vc_to_wc_center(vc: Sequence[int]) -> Vector:
     ))
 
 
+def vc_to_wc_point(vc: Sequence[float]) -> Vector:
+    """
+    Convert an arbitrary point expressed in voxel-grid coordinates to
+    world space.
+
+    Unlike :func:`vc_to_wc_center`, this function does **not** add the
+    half-voxel offset. It is therefore appropriate for:
+
+    * bounding-box centres already computed in voxel units
+    * fractional coordinates
+    * explicit geometric points on the voxel grid
+    """
+    ox, oy, oz = RUNTIME.origin_wc
+    vs = RUNTIME.voxel_size
+    return Vector((
+        ox + float(vc[0]) * vs,
+        oy + float(vc[1]) * vs,
+        oz + float(vc[2]) * vs,
+    ))
+
+
 def vc_to_wc_corner(vc: Sequence[int]) -> Vector:
     """
     Convert voxel integer coordinate to the world-space *minimum corner*

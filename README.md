@@ -45,6 +45,17 @@ chemical_piping_lib/
 - Blender 4.5+
 - No external Python packages required (uses Blender's bundled Python)
 
+## Verification & testing
+
+Without Blender: run **JSON Schema** checks and **offline unit tests** (config + coords):
+
+```bash
+pip install -r requirements-dev.txt
+pytest tests/ -v
+```
+
+See [TESTING.md](TESTING.md) for the full verification strategy (schema, invariants, optional Blender integration).
+
 ## Quick Start
 ```python
 import sys
