@@ -105,6 +105,10 @@ def _get_asset_class(type_str: str):
         from chemical_piping_lib.assets.tee   import Tee;   return Tee
     if type_str == "Flange":
         from chemical_piping_lib.assets.flange import Flange; return Flange
+    if type_str == "Reducer":
+        from chemical_piping_lib.assets.reducer import Reducer; return Reducer
+    if type_str == "Cap":
+        from chemical_piping_lib.assets.cap import Cap; return Cap
     raise ValueError(f"Unknown asset type: {type_str!r}")
 
 
@@ -208,6 +212,8 @@ def assemble(json_data: dict) -> BuildReport:
         spec   = seg.get("spec", {})
         mat_id = spec.get("material_id", "carbon_steel")
         seg_col = cols.get_or_create_segment_col(seg_id)
+        # Effective spec: after a Reducer, downstream Pipe/Valve/etc. use reducer's diameter_out.
+        effective_spec = dict(spec)
 
         for comp in seg.get("components", []):
             comp_type = comp.get("type", "Pipe")
@@ -217,7 +223,7 @@ def assemble(json_data: dict) -> BuildReport:
                 cls = _get_asset_class(comp_type)
                 asset = cls(
                     comp_data=comp,
-                    spec=spec,
+                    spec=effective_spec,
                     material_id=mat_id,
                     collection=seg_col,
                 )
@@ -225,6 +231,10 @@ def assemble(json_data: dict) -> BuildReport:
                 PortRegistry.register_many(asset.get_ports())
                 n_built += 1
                 log.info("Assembler: built %s %r in seg %r.", comp_type, comp_id, seg_id)
+
+                # After a Reducer, next component(s) should use diameter_out as nominal_diameter.
+                if comp_type == "Reducer" and "diameter_out_m" in comp:
+                    effective_spec = {**spec, "nominal_diameter": comp["diameter_out_m"]}
 
             except Exception as exc:
                 msg = f"Phase3 seg={seg_id!r} comp={comp_id!r} type={comp_type!r}: {exc}"

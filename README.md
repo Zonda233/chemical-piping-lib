@@ -9,7 +9,7 @@ P&ID Image → [VLM Perception] → [Rule Validation] → [A* Router] → [This 
 ```
 
 ## Features
-- Parametric assets: Pipe, Elbow, Tee, Valve (Gate/Ball), Flange, Tank
+- Parametric assets: Pipe, Elbow, Tee, Valve (Gate/Ball), Flange, Tank, Reducer, Cap
 - Voxel-grid coordinate system (0.2m resolution)
 - JSON-driven scene assembly
 - Blender 4.5 MANIFOLD boolean solver for reliable Tee geometry

@@ -237,6 +237,60 @@ def make_cylinder(
     return bot_loop, top_loop
 
 
+def make_frustum(
+    bm: BMesh,
+    radius_bottom: float,
+    radius_top: float,
+    depth: float,
+    segments: int | None = None,
+    center: Vector | None = None,
+) -> tuple[list[BMVert], list[BMVert]]:
+    """
+    Add a closed frustum (truncated cone) to *bm* along the local +Z axis.
+
+    The bottom ring is at ``center.z - depth/2`` with *radius_bottom*,
+    the top ring at ``center.z + depth/2`` with *radius_top*.
+    Both ends are capped.
+
+    Parameters
+    ----------
+    bm:             Target BMesh.
+    radius_bottom:  Radius at the bottom (local -Z) in metres.
+    radius_top:     Radius at the top (local +Z) in metres.
+    depth:          Length along Z in metres.
+    segments:       Circumferential vertex count.
+    center:         Geometric centre.  Defaults to origin.
+
+    Returns
+    -------
+    ``(bottom_loop, top_loop)`` of the side-wall vertex rings.
+    """
+    if segments is None:
+        segments = RUNTIME.mesh_segments
+    if center is None:
+        center = Vector((0.0, 0.0, 0.0))
+
+    half = depth * 0.5
+    z_bot = center.z - half
+    z_top = center.z + half
+    cx, cy = center.x, center.y
+
+    bot_center = Vector((cx, cy, z_bot))
+    top_center = Vector((cx, cy, z_top))
+    normal = Vector((0, 0, -1))
+
+    bot_loop = make_circle_verts(bm, bot_center, normal, radius_bottom, segments)
+    top_loop = make_circle_verts(bm, top_center, normal, radius_top, segments)
+
+    bridge_loops(bm, bot_loop, top_loop)
+    cap_loop(bm, list(reversed(bot_loop)))
+    cap_loop(bm, list(reversed(top_loop)))
+
+    bm.faces.ensure_lookup_table()
+    bm.verts.ensure_lookup_table()
+    return bot_loop, top_loop
+
+
 def make_tube(
     bm: BMesh,
     radius: float,

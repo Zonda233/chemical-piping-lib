@@ -32,13 +32,15 @@
 }
 ```
 
-| 顶层字段 | 类型 | 必需 | 说明 |
-|----------|------|------|------|
-| `meta` | object | ✅ | 协议版本、坐标系、体素网格基础参数 |
-| `materials` | array | ✅ | 材质定义库，被其他块通过 `material_id` 引用 |
-| `assets` | array | ✅ | 大型独立设备（储罐等），可为空数组 |
-| `tee_joints` | array | ✅ | 三通连接节点，可为空数组 |
-| `segments` | array | ✅ | 管线段，每段包含有序的管件序列 |
+
+| 顶层字段         | 类型     | 必需  | 说明                            |
+| ------------ | ------ | --- | ----------------------------- |
+| `meta`       | object | ✅   | 协议版本、坐标系、体素网格基础参数             |
+| `materials`  | array  | ✅   | 材质定义库，被其他块通过 `material_id` 引用 |
+| `assets`     | array  | ✅   | 大型独立设备（储罐等），可为空数组             |
+| `tee_joints` | array  | ✅   | 三通连接节点，可为空数组                  |
+| `segments`   | array  | ✅   | 管线段，每段包含有序的管件序列               |
+
 
 > **核心约定：** 所有对象间通过 `id` 字符串引用，不允许嵌套实体定义。所有 `id` 在整份 JSON 中必须全局唯一。
 
@@ -68,18 +70,20 @@
 }
 ```
 
-| 字段 | 类型 | 必需 | 说明 |
-|------|------|------|------|
-| `protocol_version` | string | ✅ | 语义版本号，生成层用于兼容性检查 |
-| `generator` | string | ❌ | 上游模块标识，用于调试溯源 |
-| `timestamp` | string | ❌ | ISO 8601 格式 |
-| `coordinate_system.type` | string | ✅ | 固定值 `"right_handed"` |
-| `coordinate_system.up_axis` | string | ✅ | 固定值 `"Z"`，与 Blender 默认一致 |
-| `coordinate_system.unit` | string | ✅ | 固定值 `"meter"` |
-| `voxel_grid.voxel_size` | float | ✅ | 体素边长（米），本项目固定 `0.2` |
-| `voxel_grid.origin_wc` | [float×3] | ✅ | 体素坐标 `[0,0,0]` 对应的世界坐标 |
-| `voxel_grid.dimensions` | [int×3] | ✅ | 网格尺寸（格数），本项目固定 `[20,20,20]` |
-| `scene_bounds` | object | ❌ | 场景包围盒，供生成层做越界检查 |
+
+| 字段                          | 类型        | 必需  | 说明                          |
+| --------------------------- | --------- | --- | --------------------------- |
+| `protocol_version`          | string    | ✅   | 语义版本号，生成层用于兼容性检查            |
+| `generator`                 | string    | ❌   | 上游模块标识，用于调试溯源               |
+| `timestamp`                 | string    | ❌   | ISO 8601 格式                 |
+| `coordinate_system.type`    | string    | ✅   | 固定值 `"right_handed"`        |
+| `coordinate_system.up_axis` | string    | ✅   | 固定值 `"Z"`，与 Blender 默认一致    |
+| `coordinate_system.unit`    | string    | ✅   | 固定值 `"meter"`               |
+| `voxel_grid.voxel_size`     | float     | ✅   | 体素边长（米），本项目固定 `0.2`         |
+| `voxel_grid.origin_wc`      | [float×3] | ✅   | 体素坐标 `[0,0,0]` 对应的世界坐标      |
+| `voxel_grid.dimensions`     | [int×3]   | ✅   | 网格尺寸（格数），本项目固定 `[20,20,20]` |
+| `scene_bounds`              | object    | ❌   | 场景包围盒，供生成层做越界检查             |
+
 
 **坐标转换公式：**
 
@@ -107,21 +111,25 @@
 ]
 ```
 
-| 字段 | 类型 | 必需 | 说明 |
-|------|------|------|------|
-| `id` | string | ✅ | 全局唯一，被其他块通过 `material_id` 引用 |
-| `display_name` | string | ❌ | 在 Blender 材质列表中显示的名称 |
-| `visual.base_color` | [float×4] | ✅ | RGBA，值域 `[0.0, 1.0]`，对应 Principled BSDF Base Color |
-| `visual.metallic` | float | ✅ | 值域 `[0.0, 1.0]`，对应 Principled BSDF Metallic |
-| `visual.roughness` | float | ✅ | 值域 `[0.0, 1.0]`，对应 Principled BSDF Roughness |
+
+| 字段                  | 类型        | 必需  | 说明                                                 |
+| ------------------- | --------- | --- | -------------------------------------------------- |
+| `id`                | string    | ✅   | 全局唯一，被其他块通过 `material_id` 引用                       |
+| `display_name`      | string    | ❌   | 在 Blender 材质列表中显示的名称                               |
+| `visual.base_color` | [float×4] | ✅   | RGBA，值域 `[0.0, 1.0]`，对应 Principled BSDF Base Color |
+| `visual.metallic`   | float     | ✅   | 值域 `[0.0, 1.0]`，对应 Principled BSDF Metallic        |
+| `visual.roughness`  | float     | ✅   | 值域 `[0.0, 1.0]`，对应 Principled BSDF Roughness       |
+
 
 **内置材质 ID 约定（生成层预置，可直接引用无需在 materials 数组中重复定义）：**
 
-| `material_id` | 说明 |
-|---------------|------|
-| `mat_carbon_steel` | 碳钢（管道默认） |
-| `mat_stainless_steel` | 不锈钢 |
-| `mat_valve_body` | 阀门本体（红色） |
+
+| `material_id`         | 说明       |
+| --------------------- | -------- |
+| `mat_carbon_steel`    | 碳钢（管道默认） |
+| `mat_stainless_steel` | 不锈钢      |
+| `mat_valve_body`      | 阀门本体（红色） |
+
 
 ---
 
@@ -144,17 +152,19 @@
 }
 ```
 
-| 字段 | 类型 | 必需 | 说明 |
-|------|------|------|------|
-| `id` | string | ✅ | 全局唯一资产标识 |
-| `type` | string | ✅ | 见[枚举值速查表](#7-枚举值速查表) |
-| `display_name` | string | ❌ | Blender 对象名称 |
-| `voxel_origin` | [int×3] | 条件 | 包围盒最小角体素坐标；与 `voxel_extent` 或 `wc_center` 二选一 |
-| `voxel_extent` | [int×3] | 条件 | 包围盒尺寸（格数）；与 `voxel_origin` 成对，或改用 `wc_center` |
-| `wc_center` | [float×3] | ❌ | 设备几何中心世界坐标；省略时由 `voxel_origin`+`voxel_extent` 推导（见 Tank 定位约定） |
-| `material_id` | string | ✅ | 引用 `materials` 中的 `id` |
-| `geometry` | object | ✅ | 该 `type` 专属几何参数，见下 |
-| `ports` | array | ✅ | 设备对外接口，见 [4.3 节](#43-port-对象) |
+
+| 字段             | 类型        | 必需  | 说明                                                            |
+| -------------- | --------- | --- | ------------------------------------------------------------- |
+| `id`           | string    | ✅   | 全局唯一资产标识                                                      |
+| `type`         | string    | ✅   | 见[枚举值速查表](#7-枚举值速查表)                                          |
+| `display_name` | string    | ❌   | Blender 对象名称                                                  |
+| `voxel_origin` | [int×3]   | 条件  | 包围盒最小角体素坐标；与 `voxel_extent` 或 `wc_center` 二选一                 |
+| `voxel_extent` | [int×3]   | 条件  | 包围盒尺寸（格数）；与 `voxel_origin` 成对，或改用 `wc_center`                 |
+| `wc_center`    | [float×3] | ❌   | 设备几何中心世界坐标；省略时由 `voxel_origin`+`voxel_extent` 推导（见 Tank 定位约定） |
+| `material_id`  | string    | ✅   | 引用 `materials` 中的 `id`                                        |
+| `geometry`     | object    | ✅   | 该 `type` 专属几何参数，见下                                            |
+| `ports`        | array     | ✅   | 设备对外接口，见 [4.3 节](#43-port-对象)                                 |
+
 
 ### 4.2 `geometry` 字段（按 type 分类）
 
@@ -170,13 +180,15 @@
 }
 ```
 
-| 字段 | 类型 | 必需 | 说明 |
-|------|------|------|------|
-| `shell_radius` | float | ✅ | 筒体半径（米） |
-| `shell_height` | float | ✅ | 筒体高度（米），不含封头 |
-| `head_type` | string | ✅ | `"ellipsoidal"` \| `"hemispherical"` \| `"flat"` |
-| `head_ratio` | float | ❌ | 椭球封头高度与半径之比，默认 `0.25`（2:1 标准封头） |
-| `orientation` | string | ✅ | `"vertical"` \| `"horizontal"` |
+
+| 字段             | 类型     | 必需  | 说明                                             |
+| -------------- | ------ | --- | ---------------------------------------------- |
+| `shell_radius` | float  | ✅   | 筒体半径（米）                                        |
+| `shell_height` | float  | ✅   | 筒体高度（米），不含封头                                   |
+| `head_type`    | string | ✅   | `"ellipsoidal"` | `"hemispherical"` | `"flat"` |
+| `head_ratio`   | float  | ❌   | 椭球封头高度与半径之比，默认 `0.25`（2:1 标准封头）                |
+| `orientation`  | string | ✅   | `"vertical"` | `"horizontal"`                  |
+
 
 **Tank 定位（生成层约定）：** 设备位置可由 `voxel_origin` + `voxel_extent` 推导中心，或显式给出 `wc_center`。`wc_center` 表示储罐**几何中心**（筒体+封头组装体中心）。立式罐罐底世界坐标 = `wc_center.z - (shell_height/2 + head_height)`（`head_height`：半球 = shell_radius，椭球 = shell_radius×head_ratio）。端口若省略 `wc`，由 `direction` 与几何自动推导；底部 -Z 端口根在罐底表面。编排管线时须保证罐底与喷嘴不插入下方弯头/直管：喷嘴末端应与 segments 首段管件 `wc_start` 一致，故 `wc_center.z` = 首段 `wc_start.z` + nozzle_length + shell_height/2 + head_height。
 
@@ -201,15 +213,17 @@
 }
 ```
 
-| 字段 | 类型 | 必需 | 说明 |
-|------|------|------|------|
-| `port_id` | string | ✅ | 全局唯一，被 `segments[].from_port` / `to_port` 引用 |
-| `role` | string | ❌ | `"inlet"` \| `"outlet"` \| `"vent"` \| `"drain"` |
-| `vc` | [int×3] | ✅ | 接口所在体素坐标 |
-| `wc` | [float×3] | ✅ | 接口世界坐标（bpy 直接使用） |
-| `direction` | string | ✅ | 接管朝外方向，见[枚举值速查表](#7-枚举值速查表) |
-| `nominal_diameter` | float | ✅ | 公称直径（米），如 `0.1` 表示 DN100 |
-| `flange_spec` | object | ❌ | 接管法兰规格，省略时继承所属管线段的 `spec` |
+
+| 字段                 | 类型        | 必需  | 说明                                            |
+| ------------------ | --------- | --- | --------------------------------------------- |
+| `port_id`          | string    | ✅   | 全局唯一，被 `segments[].from_port` / `to_port` 引用  |
+| `role`             | string    | ❌   | `"inlet"` | `"outlet"` | `"vent"` | `"drain"` |
+| `vc`               | [int×3]   | ✅   | 接口所在体素坐标                                      |
+| `wc`               | [float×3] | ✅   | 接口世界坐标（bpy 直接使用）                              |
+| `direction`        | string    | ✅   | 接管朝外方向，见[枚举值速查表](#7-枚举值速查表)                   |
+| `nominal_diameter` | float     | ✅   | 公称直径（米），如 `0.1` 表示 DN100                      |
+| `flange_spec`      | object    | ❌   | 接管法兰规格，省略时继承所属管线段的 `spec`                     |
+
 
 ---
 
@@ -249,18 +263,20 @@
 ]
 ```
 
-| 字段 | 类型 | 必需 | 说明 |
-|------|------|------|------|
-| `tee_id` | string | ✅ | 全局唯一标识 |
-| `vc_center` | [int×3] | ✅ | 三通中心体素坐标 |
-| `wc_center` | [float×3] | ✅ | 三通中心世界坐标 |
-| `ports` | array | ✅ | 恰好 3 个端口对象 |
-| `ports[].port_id` | string | ✅ | 全局唯一 |
-| `ports[].axis` | string | ✅ | 该端口朝外方向 |
-| `ports[].connects_to_comp` | string | ✅ | 引用相邻管件的 `comp_id` |
-| `spec.main_diameter` | float | ✅ | 主管公称直径（米） |
-| `spec.branch_diameter` | float | ✅ | 支管公称直径（米），等径三通时与主管相同 |
-| `spec.material_id` | string | ✅ | 引用 `materials` 中的 `id` |
+
+| 字段                         | 类型        | 必需  | 说明                     |
+| -------------------------- | --------- | --- | ---------------------- |
+| `tee_id`                   | string    | ✅   | 全局唯一标识                 |
+| `vc_center`                | [int×3]   | ✅   | 三通中心体素坐标               |
+| `wc_center`                | [float×3] | ✅   | 三通中心世界坐标               |
+| `ports`                    | array     | ✅   | 恰好 3 个端口对象             |
+| `ports[].port_id`          | string    | ✅   | 全局唯一                   |
+| `ports[].axis`             | string    | ✅   | 该端口朝外方向                |
+| `ports[].connects_to_comp` | string    | ✅   | 引用相邻管件的 `comp_id`      |
+| `spec.main_diameter`       | float     | ✅   | 主管公称直径（米）              |
+| `spec.branch_diameter`     | float     | ✅   | 支管公称直径（米），等径三通时与主管相同   |
+| `spec.material_id`         | string    | ✅   | 引用 `materials` 中的 `id` |
+
 
 > **拓扑约定：** 两个 `axis` 方向互为反方向的端口为**主管（run）**，第三个为**支管（branch）**。生成层通过此约定自动判断布尔操作方向。
 
@@ -289,27 +305,31 @@
 }
 ```
 
-| 字段 | 类型 | 必需 | 说明 |
-|------|------|------|------|
-| `id` | string | ✅ | 全局唯一 |
-| `display_name` | string | ❌ | 用于 Blender Collection 命名 |
-| `from_port` | string | ✅ | 起始端口 `port_id`，引用 asset 或 tee_joint 的端口；`null` 表示自由端 |
-| `to_port` | string | ✅ | 终止端口 `port_id`；`null` 表示自由端 |
-| `spec.nominal_diameter` | float | ✅ | 本段管线公称直径（米），所有管件默认继承此值 |
-| `spec.pipe_schedule` | string | ❌ | 管道壁厚标准，如 `"SCH40"`，用于查 DN 表 |
-| `spec.material_id` | string | ✅ | 本段默认材质 |
-| `spec.with_flanges` | bool | ✅ | `true` 时生成层在每个管件两端自动添加法兰 |
-| `spec.flange_face_type` | string | ❌ | `"RF"`（突面）\| `"FF"`（全平面），默认 `"RF"` |
-| `components` | array | ✅ | 有序管件序列，从 `from_port` 到 `to_port` 方向排列 |
+
+| 字段                      | 类型     | 必需  | 说明                                                   |
+| ----------------------- | ------ | --- | ---------------------------------------------------- |
+| `id`                    | string | ✅   | 全局唯一                                                 |
+| `display_name`          | string | ❌   | 用于 Blender Collection 命名                             |
+| `from_port`             | string | ✅   | 起始端口 `port_id`，引用 asset 或 tee_joint 的端口；`null` 表示自由端 |
+| `to_port`               | string | ✅   | 终止端口 `port_id`；`null` 表示自由端                          |
+| `spec.nominal_diameter` | float  | ✅   | 本段管线公称直径（米），管件默认继承此值；遇 Reducer 后下游自动沿用其 `diameter_out_m` |
+| `spec.pipe_schedule`    | string | ❌   | 管道壁厚标准，如 `"SCH40"`，用于查 DN 表                          |
+| `spec.material_id`      | string | ✅   | 本段默认材质                                               |
+| `spec.with_flanges`     | bool   | ✅   | `true` 时生成层在每个管件两端自动添加法兰                             |
+| `spec.flange_face_type` | string | ❌   | `"RF"`（突面）| `"FF"`（全平面），默认 `"RF"`                    |
+| `components`            | array  | ✅   | 有序管件序列，从 `from_port` 到 `to_port` 方向排列                |
+
 
 ### 6.2 `components` 数组——管件对象
 
 所有管件共有以下基础字段：
 
-| 字段 | 类型 | 必需 | 说明 |
-|------|------|------|------|
-| `comp_id` | string | ✅ | 全局唯一，被 `tee_joints` 的 `connects_to_comp` 引用 |
-| `type` | string | ✅ | 见[枚举值速查表](#7-枚举值速查表) |
+
+| 字段        | 类型     | 必需  | 说明                                          |
+| --------- | ------ | --- | ------------------------------------------- |
+| `comp_id` | string | ✅   | 全局唯一，被 `tee_joints` 的 `connects_to_comp` 引用 |
+| `type`    | string | ✅   | 见[枚举值速查表](#7-枚举值速查表)                        |
+
 
 ---
 
@@ -328,12 +348,14 @@
 }
 ```
 
-| 字段 | 类型 | 必需 | 说明 |
-|------|------|------|------|
-| `vc_start` / `vc_end` | [int×3] | ✅ | 起止体素坐标 |
-| `wc_start` / `wc_end` | [float×3] | ✅ | 起止世界坐标（bpy 直接使用） |
-| `axis` | string | ✅ | 管道延伸方向（从 start 指向 end） |
-| `length_m` | float | ✅ | 管道长度（米），应与 `wc_start`/`wc_end` 距离一致 |
+
+| 字段                    | 类型        | 必需  | 说明                                  |
+| --------------------- | --------- | --- | ----------------------------------- |
+| `vc_start` / `vc_end` | [int×3]   | ✅   | 起止体素坐标                              |
+| `wc_start` / `wc_end` | [float×3] | ✅   | 起止世界坐标（bpy 直接使用）                    |
+| `axis`                | string    | ✅   | 管道延伸方向（从 start 指向 end）              |
+| `length_m`            | float     | ✅   | 管道长度（米），应与 `wc_start`/`wc_end` 距离一致 |
+
 
 ---
 
@@ -352,14 +374,16 @@
 }
 ```
 
-| 字段 | 类型 | 必需 | 说明 |
-|------|------|------|------|
-| `vc_center` | [int×3] | ✅ | 弯头所在体素坐标 |
-| `wc_center` | [float×3] | ✅ | 弯头转角处世界坐标 |
-| `axis_in` | string | ✅ | 流体进入方向 |
-| `axis_out` | string | ✅ | 流体离开方向 |
-| `angle_deg` | int | ✅ | 弯曲角度，枚举值：`45` \| `90` |
-| `bend_radius_m` | float | ❌ | 弯曲半径（米），默认 `1.5 × 管道外径`（工业长半径标准） |
+
+| 字段              | 类型        | 必需  | 说明                               |
+| --------------- | --------- | --- | -------------------------------- |
+| `vc_center`     | [int×3]   | ✅   | 弯头所在体素坐标                         |
+| `wc_center`     | [float×3] | ✅   | 弯头转角处世界坐标                        |
+| `axis_in`       | string    | ✅   | 流体进入方向                           |
+| `axis_out`      | string    | ✅   | 流体离开方向                           |
+| `angle_deg`     | int       | ✅   | 弯曲角度，枚举值：`45` | `90`             |
+| `bend_radius_m` | float     | ❌   | 弯曲半径（米），默认 `1.5 × 管道外径`（工业长半径标准） |
+
 
 > **约束：** `axis_in` 与 `axis_out` 不得相同，不得互为反方向（反方向为 180° 直管，不是弯头）。
 
@@ -381,13 +405,15 @@
 }
 ```
 
-| 字段 | 类型 | 必需 | 说明 |
-|------|------|------|------|
-| `subtype` | string | ✅ | `"Gate"` \| `"Ball"`，见[枚举值速查表](#7-枚举值速查表) |
-| `vc_start` / `vc_end` | [int×3] | ✅ | 阀门两端体素坐标，通常跨 2 个体素 |
-| `wc_start` / `wc_end` | [float×3] | ✅ | 阀门两端世界坐标（即管道连接端面位置） |
-| `axis` | string | ✅ | 阀门通流方向 |
-| `nominal_diameter` | float | ❌ | 若与 `spec` 不同可在此覆盖 |
+
+| 字段                    | 类型        | 必需  | 说明                                       |
+| --------------------- | --------- | --- | ---------------------------------------- |
+| `subtype`             | string    | ✅   | `"Gate"` | `"Ball"`，见[枚举值速查表](#7-枚举值速查表) |
+| `vc_start` / `vc_end` | [int×3]   | ✅   | 阀门两端体素坐标，通常跨 2 个体素                       |
+| `wc_start` / `wc_end` | [float×3] | ✅   | 阀门两端世界坐标（即管道连接端面位置）                      |
+| `axis`                | string    | ✅   | 阀门通流方向                                   |
+| `nominal_diameter`    | float     | ❌   | 若与 `spec` 不同可在此覆盖                        |
+
 
 ---
 
@@ -407,10 +433,13 @@
 }
 ```
 
-| 字段 | 类型 | 必需 | 说明 |
-|------|------|------|------|
-| `diameter_in_m` | float | ✅ | 入口端公称直径（米） |
-| `diameter_out_m` | float | ✅ | 出口端公称直径（米） |
+
+| 字段               | 类型    | 必需  | 说明         |
+| ---------------- | ----- | --- | ---------- |
+| `diameter_in_m`  | float | ✅   | 入口端公称直径（米） |
+| `diameter_out_m` | float | ✅   | 出口端公称直径（米） |
+
+> **生成层约定：** 同一 segment 内，紧接在 Reducer 之后的 Pipe、Valve 等管件会自动使用该 Reducer 的 `diameter_out_m` 作为 `nominal_diameter`，无需在 JSON 中为下游管件重复指定；若需覆盖可在该 component 上显式写 `nominal_diameter`。
 
 ---
 
@@ -426,11 +455,13 @@
 }
 ```
 
-| 字段 | 类型 | 必需 | 说明 |
-|------|------|------|------|
-| `vc` | [int×3] | ✅ | 管帽所在体素坐标 |
-| `wc` | [float×3] | ✅ | 管帽端面世界坐标 |
-| `axis` | string | ✅ | 指向管帽封堵方向（即管道终止方向） |
+
+| 字段     | 类型        | 必需  | 说明                |
+| ------ | --------- | --- | ----------------- |
+| `vc`   | [int×3]   | ✅   | 管帽所在体素坐标          |
+| `wc`   | [float×3] | ✅   | 管帽端面世界坐标          |
+| `axis` | string    | ✅   | 指向管帽封堵方向（即管道终止方向） |
+
 
 ---
 
@@ -438,47 +469,57 @@
 
 ### `axis` 方向枚举
 
-| 值 | 含义 | Blender 向量 |
-|----|------|-------------|
-| `"+X"` | 向右 | `(1, 0, 0)` |
-| `"-X"` | 向左 | `(-1, 0, 0)` |
-| `"+Y"` | 向前（屏幕内） | `(0, 1, 0)` |
-| `"-Y"` | 向后 | `(0, -1, 0)` |
-| `"+Z"` | 向上 | `(0, 0, 1)` |
-| `"-Z"` | 向下 | `(0, 0, -1)` |
+
+| 值      | 含义      | Blender 向量   |
+| ------ | ------- | ------------ |
+| `"+X"` | 向右      | `(1, 0, 0)`  |
+| `"-X"` | 向左      | `(-1, 0, 0)` |
+| `"+Y"` | 向前（屏幕内） | `(0, 1, 0)`  |
+| `"-Y"` | 向后      | `(0, -1, 0)` |
+| `"+Z"` | 向上      | `(0, 0, 1)`  |
+| `"-Z"` | 向下      | `(0, 0, -1)` |
+
 
 ### `type`（资产类型）枚举
 
-| 值 | 所属块 | 说明 |
-|----|--------|------|
-| `"Tank"` | `assets` | 储罐 |
-| `"Pipe"` | `segments.components` | 直管 |
-| `"Elbow"` | `segments.components` | 弯头 |
-| `"Valve"` | `segments.components` | 阀门 |
+
+| 值           | 所属块                   | 说明  |
+| ----------- | --------------------- | --- |
+| `"Tank"`    | `assets`              | 储罐  |
+| `"Pipe"`    | `segments.components` | 直管  |
+| `"Elbow"`   | `segments.components` | 弯头  |
+| `"Valve"`   | `segments.components` | 阀门  |
 | `"Reducer"` | `segments.components` | 变径管 |
-| `"Cap"` | `segments.components` | 管帽 |
+| `"Cap"`     | `segments.components` | 管帽  |
+
 
 ### `Valve.subtype` 枚举
 
-| 值 | 说明 |
-|----|------|
-| `"Gate"` | 闸阀 |
-| `"Ball"` | 球阀 |
+
+| 值        | 说明  |
+| -------- | --- |
+| `"Gate"` | 闸阀  |
+| `"Ball"` | 球阀  |
+
 
 ### `Tank.geometry.head_type` 枚举
 
-| 值 | 说明 |
-|----|------|
-| `"ellipsoidal"` | 椭球封头（2:1，工业标准） |
-| `"hemispherical"` | 半球封头 |
-| `"flat"` | 平封头（无封头） |
+
+| 值                 | 说明             |
+| ----------------- | -------------- |
+| `"ellipsoidal"`   | 椭球封头（2:1，工业标准） |
+| `"hemispherical"` | 半球封头           |
+| `"flat"`          | 平封头（无封头）       |
+
 
 ### `Tank.geometry.orientation` 枚举
 
-| 值 | 说明 |
-|----|------|
-| `"vertical"` | 立式（筒体轴线平行 +Z） |
+
+| 值              | 说明            |
+| -------------- | ------------- |
+| `"vertical"`   | 立式（筒体轴线平行 +Z） |
 | `"horizontal"` | 卧式（筒体轴线平行 +X） |
+
 
 ---
 
@@ -633,14 +674,16 @@
 
 ### 9.1 ID 命名规范
 
-| ID 类型 | 推荐格式 | 示例 |
-|---------|---------|------|
-| asset | `{类型缩写}_{两位序号}` | `tank_01` |
-| port（设备）| `{asset_id}_{接管位置}` | `tank_01_outlet` |
-| tee | `tee_{两位序号}` | `tee_01` |
-| port（三通）| `{tee_id}_{run_a\|run_b\|branch}` | `tee_01_branch` |
-| segment | `seg_{两位序号}` | `seg_01` |
-| component | `s{段序号}_c{管件序号}` | `s01_c03` |
+
+| ID 类型     | 推荐格式                            | 示例               |
+| --------- | ------------------------------- | ---------------- |
+| asset     | `{类型缩写}_{两位序号}`                 | `tank_01`        |
+| port（设备）  | `{asset_id}_{接管位置}`             | `tank_01_outlet` |
+| tee       | `tee_{两位序号}`                    | `tee_01`         |
+| port（三通）  | `{tee_id}_{run_a|run_b|branch}` | `tee_01_branch`  |
+| segment   | `seg_{两位序号}`                    | `seg_01`         |
+| component | `s{段序号}_c{管件序号}`                | `s01_c03`        |
+
 
 ### 9.2 坐标双轨制约定
 
@@ -667,23 +710,27 @@
 
 ### 9.5 公称直径与实际几何尺寸
 
-`nominal_diameter` 是**公称直径**（米），不是实际外径。生成层内部查 DN 规格表（`config.DN_TABLE`）得到实际外径与壁厚：
+`nominal_diameter` 是**公称直径**（米），不是实际外径。生成层内部查 DN 规格表（`config.DN_TABLE`）得到实际外径与壁厚。同一 segment 内，紧接在 **Reducer** 之后的 Pipe、Valve 等会自动使用该 Reducer 的 `diameter_out_m` 作为当前公称直径，直至本段结束或遇到新的 Reducer。
 
-| 公称直径 | DN 标准 | 实际外径（米） | 壁厚 SCH40（米） |
-|---------|---------|--------------|----------------|
-| `0.025` | DN25 | `0.0334` | `0.0038` |
-| `0.050` | DN50 | `0.0603` | `0.0046` |
-| `0.100` | DN100 | `0.1143` | `0.0060` |
-| `0.150` | DN150 | `0.1683` | `0.0071` |
-| `0.200` | DN200 | `0.2191` | `0.0081` |
+
+| 公称直径    | DN 标准 | 实际外径（米）  | 壁厚 SCH40（米） |
+| ------- | ----- | -------- | ----------- |
+| `0.025` | DN25  | `0.0334` | `0.0038`    |
+| `0.050` | DN50  | `0.0603` | `0.0046`    |
+| `0.100` | DN100 | `0.1143` | `0.0060`    |
+| `0.150` | DN150 | `0.1683` | `0.0071`    |
+| `0.200` | DN200 | `0.2191` | `0.0081`    |
+
 
 ### 9.6 版本兼容性
 
-| 字段变化 | 版本升级策略 |
-|---------|-------------|
-| 新增可选字段 | 次版本升级（`1.0.0` → `1.1.0`），向后兼容 |
+
+| 字段变化   | 版本升级策略                         |
+| ------ | ------------------------------ |
+| 新增可选字段 | 次版本升级（`1.0.0` → `1.1.0`），向后兼容  |
 | 新增必需字段 | 主版本升级（`1.x.x` → `2.0.0`），不向后兼容 |
-| 枚举值新增 | 次版本升级 |
-| 坐标系变更 | 主版本升级 |
+| 枚举值新增  | 次版本升级                          |
+| 坐标系变更  | 主版本升级                          |
+
 
 生成层在收到 JSON 后，首先检查 `meta.protocol_version` 的主版本号是否匹配，不匹配则**立即抛出异常**拒绝执行。

@@ -17,4 +17,6 @@ Public classes
    flange.Flange
    valve.Valve
    tank.Tank
+   reducer.Reducer
+   cap.Cap
 """

@@ -36,9 +36,10 @@ LIB_ROOT  = os.environ.get(
 )
 
 # Path to the JSON scene file to build.
+# Default: full_components_scene.json (covers Tank, Pipe, Elbow, Tee, Valve, Reducer, Cap).
 JSON_FILE = os.environ.get(
     "CPL_JSON_FILE",
-    os.path.join(os.path.dirname(os.path.abspath(__file__)), "minimal_scene.json"),
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "full_components_scene.json"),
 )
 
 # ---------------------------------------------------------------------------
